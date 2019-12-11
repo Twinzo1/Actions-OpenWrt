@@ -110,11 +110,11 @@ jobs:
     - name : Upload packages
       uses: actions/upload-artifact@master
       with:
-        name: OpenWrt packages
+        name: tl941n OpenWrt packages
         path: openwrt/bin/packages
 
     - name : Upload targets
       uses: actions/upload-artifact@master
       with:
-        name: OpenWrt firmware
+        name: tl941n OpenWrt firmware
         path: openwrt/bin/targets
