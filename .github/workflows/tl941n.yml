@@ -68,11 +68,7 @@ jobs:
       run: git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
 
     - name: Update oui
-      run: cd openwrt && echo "src-git packages https://github.com/openwrt/packages" > feeds.conf.default
-                      echo "src-git luci https://git.openwrt.org/project/luci.git" >> feeds.conf.default
-                      echo "src-git routing https://git.openwrt.org/feed/routing.git" >> feeds.conf.default
-                      echo "src-git telephony https://git.openwrt.org/feed/telephony.git" >> feeds.conf.default
-                      echo "src-git oui https://github.com/Twinzo1/oui.git" >> feeds.conf.default
+      run: cd openwrt && echo "src-git oui https://github.com/Twinzo1/oui.git" >> feeds.conf.default
       
     - name: Update feeds
       run: cd openwrt && ./scripts/feeds update -a
