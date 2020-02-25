@@ -98,11 +98,11 @@ jobs:
     - name : Upload packages
       uses: actions/upload-artifact@master
       with:
-        name: Miwifi_mini OpenWrt packages
+        name: miwifi_mini OpenWrt packages
         path: openwrt/bin/packages
 
     - name : Upload targets
       uses: actions/upload-artifact@master
       with:
-        name: Miwifi_mini OpenWrt firmware
+        name: miwifi_mini OpenWrt firmware
         path: openwrt/bin/targets
