@@ -14,7 +14,7 @@ on:
     branches: 
       - master
     paths:
-      - 'xiaomini.config'
+      - 'miwifi_mini.config'
 #  schedule:
 #    - cron: 0 8 * * 5
   watch:
@@ -70,7 +70,7 @@ jobs:
 
     - name: Load custom configuration
       env:
-        CONFIG_FILE: 'xiaomini.config'
+        CONFIG_FILE: 'miwifi_mini.config'
         DIY_SH: 'diy37.sh'
       run: |
         [ -e files ] && mv files openwrt/files
