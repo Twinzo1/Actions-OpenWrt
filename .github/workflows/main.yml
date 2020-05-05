@@ -25,7 +25,6 @@ on:
 env:
   TZ: Asia/Shanghai
   SOURCE: zzs01的lede源码
-  DESCRIPTION: functions_zzs01.txt
 
 jobs:
   build:
