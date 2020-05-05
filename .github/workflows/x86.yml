@@ -20,12 +20,8 @@ on:
   watch:
     types: [started]
 env:
-  FEEDS_CONF: feeds.conf.default
-  CONFIG_FILE: x86.config
-  SSH_ACTIONS: false
   TZ: Asia/Shanghai
   SOURCE: zzs01的lede源码
-  DESCRIPTION: functions_zzs01.txt
   
 jobs:
   build:
