@@ -1,0 +1,187 @@
+#=================================================
+# https://github.com/P3TERX/Actions-OpenWrt
+# Description: Build OpenWrt using GitHub Actions
+# Lisence: MIT
+# Author: P3TERX
+# Blog: https://p3terx.com
+#=================================================
+
+name: Build Lede zzs01
+
+on:
+  repository_dispatch:
+  release:
+    types: published
+  push:
+    branches:
+      - master
+    paths:
+      - 'zzs01_lede.config'
+#  schedule:
+#    - cron: 0 8 * * 5
+  watch:
+    types: started
+
+env:
+  REPO_URL: https://github.com/zzs01/lede
+  REPO_BRANCH: master
+  FEEDS_CONF: feeds.conf.default
+  CONFIG_FILE: zzs01_lede.config
+  DIY_P1_SH: diy-part1_zzs01.sh
+  DIY_P2_SH: diy-part2_zzs01.sh
+  SSH_ACTIONS: false
+  TZ: Asia/Shanghai
+  SOURCE: zzs01的lede源码
+  DESCRIPTION: functions_zzs01.txt
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo swapoff /swapfile
+        sudo rm -rf /swapfile /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler antlr3 gperf
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        curl -fsSL https://raw.githubusercontent.com/P3TERX/dotfiles/master/.bashrc >> ~/.bashrc
+    - name: Clone source code
+      run: git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+
+    - name: Load custom feeds
+      run: |
+        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+        chmod +x $DIY_P1_SH
+        cd openwrt
+        ../$DIY_P1_SH
+    - name: Update feeds
+      run: cd openwrt && ./scripts/feeds update -a
+
+    - name: Install feeds
+      run: cd openwrt && ./scripts/feeds install -a && ./scripts/feeds install -a
+
+    - name: Load custom configuration
+      run: |
+        [ -e files ] && mv files openwrt/files
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x $DIY_P2_SH
+        cd openwrt
+        ../$DIY_P2_SH
+        
+    - name: SSH connection to Actions
+      uses: P3TERX/debugger-action@master
+      if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
+
+    - name: Download package
+      id: package
+      run: |
+        cd openwrt
+        make defconfig
+        make download -j8
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+        
+    - name: Compile the firmware
+      id: compile
+      run: |
+        cd openwrt
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) || make -j1 || make -j1 V=s
+        echo "::set-output name=status::success"
+        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
+        [ -s DEVICE_NAME ] && echo "::set-env name=DEVICE_NAME::_$(cat DEVICE_NAME)"
+        echo "::set-env name=FILE_DATE::_$(date +"%Y%m%d%H%M")"
+        
+    - name: Init SendEmail
+      run: |
+        cd openwrt
+        wget http://caspian.dotconf.net/menu/Software/SendEmail/sendEmail-v1.56.tar.gz
+        tar -xzvf sendEmail-v1.56.tar.gz
+    
+    - name: Add description
+      id: description
+      run: | 
+        [ -e $DESCRIPTION ] && mv $DESCRIPTION openwrt/bin/插件说明.txt
+        echo "::set-output name=status::success"
+        
+    - name: Compress firmware
+      id: compress
+      run: | 
+        zip -r ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Firmware.zip openwrt/bin/targets
+        zip -r ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip openwrt/bin
+        zip -r ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Packages.zip openwrt/bin/packages
+        echo "::set-output name=status::success"
+        
+    - name: Send bin directory
+      id: send_bin
+      if: steps.compress.outputs.status == 'success'
+      run: |   
+        cd openwrt
+        [ `wc -c ./${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip | awk -F " " '{print $1}'` -lt "52428800" ] && \
+        ./sendEmail-v1.56/sendEmail -f 13631482230@163.com -t tracefish@qq.com \
+        {-s smtp.163.com -u "${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}BinDir" -o message-content-type=html \
+        -o tls=no -o message-charset=utf8 -xu 13631482230@163.com -xp HFQPUYFNORNDJCSM -m "${SOURCE}" \
+        -v -a ./${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip } && \
+        echo "::set-output name=status::success"
+        
+    - name: Upload bin directory to cowtransfer
+      id: upload_bin
+      if: steps.send_bin.outputs.status == 'success' || !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer cow --block 2621440 -s -p 64 --no-progress ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip 2>&1 | tee cowtransfer.log
+        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+        ./sendEmail-v1.56/sendEmail -f 13631482230@163.com -t tracefish@qq.com \
+        -s smtp.163.com -u "${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}" -o message-content-type=html \
+        -o tls=no -o message-charset=utf8 -xu 13631482230@163.com -xp HFQPUYFNORNDJCSM \
+        -m "${SOURCE}，奶牛快传下载链接：$(cat cowtransfer.log | grep https)" \
+        -v -a ./${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip
+        echo "::set-output name=status::success"
+    
+    - name: Send firmware
+      id: send_firmware
+      if: steps.upload_bin.outputs.status == 'success' || !cancelled()
+      run: |   
+        cd openwrt
+        [ `wc -c ./${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Firmware.zip | awk -F " " '{print $1}'` -lt "52428800" ] && \ 
+        {./sendEmail-v1.56/sendEmail -f 13631482230@163.com -t tracefish@qq.com \
+        -s smtp.163.com -u "${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}firmware" -o message-content-type=html \
+        -o tls=no -o message-charset=utf8 -xu 13631482230@163.com -xp HFQPUYFNORNDJCSM -m "${SOURCE}" \
+        -v -a ./${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Firmware.zip } && \
+        echo "::set-output name=status::success"
+        
+    - name: Send packages
+      id: send_packages
+      if: steps.upload_bin.outputs.status == 'success' || !cancelled()
+      run: |   
+        cd openwrt
+        [ `wc -c ./Packages.zip | awk -F " " '{print $1}'` -lt "52428800" ] && \
+        {./sendEmail-v1.56/sendEmail -f 13631482230@163.com -t tracefish@qq.com \
+        -s smtp.163.com -u "${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}packages" -o message-content-type=html \
+        -o tls=no -o message-charset=utf8 -xu 13631482230@163.com -xp HFQPUYFNORNDJCSM -m "${SOURCE}" \
+        -v -a ./${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Packages.zip } && \
+        echo "::set-output name=status::success"
+      
+    - name : Upload packages
+      uses: actions/upload-artifact@master
+      if: steps.send_packages.outputs.status == 'success' || !cancelled()
+      with:
+        name: ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }} packages
+        path: openwrt/bin/packages
+
+    - name : Upload targets
+      uses: actions/upload-artifact@master
+      if: steps.send_firmware.outputs.status == 'success' || !cancelled()
+      with:
+        name: ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }} firmware
+        path: openwrt/bin/targets
