@@ -26,7 +26,6 @@ env:
   REPO_URL: https://github.com/zzs01/lede
   REPO_BRANCH: master
   DIY_SH: diy.sh
-  SSH_ACTIONS: false
   TZ: Asia/Shanghai
   SOURCE: zzs01的lede源码
   DESCRIPTION: functions_zzs01.txt
