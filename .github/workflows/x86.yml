@@ -20,7 +20,6 @@ on:
   watch:
     types: [started]
 env:
-  SSH_ACTIONS: false
   TZ: Asia/Shanghai
   SOURCE: zzs01的lede源码
   DESCRIPTION: functions_zzs01.txt
