@@ -71,6 +71,12 @@ jobs:
         cd openwrt
         ../$DIY_SH
 
+    - name: Init Gargoyle package
+      id: gargoyle
+      run: |
+        cd openwrt
+        sh ./package/gargoyle/netfilter-match-modules/*.sh . ./package/gargoyle/netfilter-match-modules 1 0
+        
     - name: Download package
       id: package
       run: |
