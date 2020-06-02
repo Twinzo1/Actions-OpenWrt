@@ -75,7 +75,7 @@ jobs:
       id: gargoyle
       run: |
         cd openwrt
-        sh ./package/gargoyle/netfilter-match-modules/*.sh . ./package/gargoyle/netfilter-match-modules 1 0
+        sh ./package/gargoyle/netfilter-match-modules/*.sh . ./package/gargoyle/netfilter-match-modules 1 1
         
     - name: Download package
       id: package
