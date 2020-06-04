@@ -84,7 +84,7 @@ jobs:
       id: gargoyle
       run: |
         cd openwrt
-        sh ./package/gargoyle/netfilter-match-modules/*.sh . ./package/gargoyle/netfilter-match-modules 1 1
+        package/gargoyle/build.sh
         
     - name: Compile the firmware
       id: compile
