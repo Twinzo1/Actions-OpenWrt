@@ -80,6 +80,11 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
         
+    - name: Init Gargoyle package
+      id: gargoyle
+      run: |
+        cd openwrt
+        sh ./package/gargoyle/netfilter-match-modules/*.sh . ./package/gargoyle/netfilter-match-modules 1 1
      
     - name: Compile the firmware
       id: compile
