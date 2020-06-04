@@ -84,7 +84,7 @@ jobs:
       id: gargoyle
       run: |
         cd openwrt
-        package/gargoyle/build.sh
+        package/gargoyle/gargoyle-build.sh
         
     - name: Compile the firmware
       id: compile
