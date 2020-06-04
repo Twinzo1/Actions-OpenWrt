@@ -62,7 +62,7 @@ jobs:
 
     - name: Load custom configuration
       env:
-        CONFIG_FILE: 'lede.config'
+        CONFIG_FILE: 'lede-s.config'
         DIY_SH: 'diy.sh'
       run: |
         [ -e files ] && mv files openwrt/files
