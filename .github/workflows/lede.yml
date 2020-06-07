@@ -71,6 +71,11 @@ jobs:
         cd openwrt
         ../$DIY_SH
         
+    - name: Init Gargoyle package
+      id: gargoyle
+      run: |
+        cd openwrt && chmod 777 ./package/gargoyle/gargoyle-build.sh && ./package/gargoyle/gargoyle-build.sh
+        
     - name: Download package
       id: package
       run: |
@@ -79,11 +84,6 @@ jobs:
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
-        
-    - name: Init Gargoyle package
-      id: gargoyle
-      run: |
-        cd openwrt && chmod 777 ./package/gargoyle/gargoyle-build.sh && ./package/gargoyle/gargoyle-build.sh
         
     - name: Compile the firmware
       id: compile
