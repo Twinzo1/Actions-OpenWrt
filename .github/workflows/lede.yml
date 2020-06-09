@@ -97,7 +97,7 @@ jobs:
     - name: Init Gargoyle package
       id: gargoyle
       run: |
-        cd openwrt && chmod 777 ./package/gargoyle/gargoyle-build.sh && ./package/gargoyle/gargoyle-build.sh && ./package/gargoyle/gargoyle-build.sh
+        cd openwrt && chmod 777 ./package/gargoyle/gargoyle-build.sh && ./package/gargoyle/gargoyle-build.sh
         
     - name: Compile the firmware
       id: compile
