@@ -30,7 +30,7 @@ jobs:
 
   build_openwrt:
 
-    name: Build OpenWrt and release
+    name: Build LEDE
     runs-on: ubuntu-18.04
 
     steps:
