@@ -183,5 +183,5 @@ jobs:
         uses: actions/upload-artifact@master
         if: steps.upload_bin.outputs.status == 'success' || steps.send_bin.outputs.status == 'success' || steps.send_firmware.outputs.status == 'success' || !cancelled()
         with:
-          name: ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }} firmware
+          name: ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }} core
           path: openwrt/bin/targets/*/*/packages
