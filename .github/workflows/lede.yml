@@ -178,3 +178,10 @@ jobs:
         with:
           name: ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }} firmware
           path: openwrt/bin/targets
+          
+      - name : Upload core_packages
+        uses: actions/upload-artifact@master
+        if: steps.upload_bin.outputs.status == 'success' || steps.send_bin.outputs.status == 'success' || steps.send_firmware.outputs.status == 'success' || !cancelled()
+        with:
+          name: ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }} firmware
+          path: openwrt/bin/targets/*/*/packages
