@@ -71,7 +71,7 @@ jobs:
           DIY_SH: 'diy.sh'
         run: |
           [ -e files ] && mv files openwrt/files
-          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+          [ -e $CONFIG_FILE ] && mv -f $CONFIG_FILE openwrt/.config
           chmod +x $DIY_SH
           cd openwrt
           ../$DIY_SH
@@ -96,6 +96,7 @@ jobs:
           du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
           du -h --max-depth=1 ./build_dir
           du -h --max-depth=1 ./bin
+          
       - name: Prepare artifact
         run: |
           mkdir -p ./artifact/firmware
