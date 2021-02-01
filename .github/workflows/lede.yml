@@ -77,15 +77,6 @@ jobs:
           ../$DIY_SH
           make defconfig
 
-      - name: Download package
-        id: package
-        run: |
-          cd openwrt
-          make defconfig
-          make download -j8
-          find dl -size -1024c -exec ls -l {} \;
-          find dl -size -1024c -exec rm -f {} \;
-
       - name: Compile firmware
         run: |
           make -j$(nproc) || make -j1 V=s
