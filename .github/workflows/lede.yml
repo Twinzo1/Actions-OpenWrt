@@ -124,13 +124,13 @@ jobs:
       - name: Deliver package
         uses: actions/upload-artifact@v2
         with:
-          name: OpenWrt_package
+          name: $(cat /openwrt/DEVICE_NAME)$(cat /openwrt/FILE_DATE)Bin
           path: openwrt/artifact/package/
 
       - name: Deliver firmware
         uses: actions/upload-artifact@v2
         with:
-          name: OpenWrt_firmware
+          name: $(cat /openwrt/DEVICE_NAME)$(cat /openwrt/FILE_DATE)Firmware
           path: openwrt/bin/targets/
 
       - name: Init SendEmail
