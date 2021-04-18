@@ -90,6 +90,10 @@ jobs:
         run: |
           cd openwrt
           make -j$(nproc) || make -j1 V=s
+          echo "::set-output name=status::success"
+          grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
+          [ -s DEVICE_NAME ] && echo "::set-env name=DEVICE_NAME::_$(cat DEVICE_NAME)"
+          echo "::set-env name=FILE_DATE::_$(date +"%Y%m%d%H%M")"
           echo "======================="
           echo "Space usage:"
           echo "======================="
@@ -106,8 +110,8 @@ jobs:
           mkdir -p ./artifact/package
           mkdir -p ./artifact/buildinfo
           rm -rf $(find ./bin/targets/ -type d -name "packages")
-          cp -rf $(find ./bin/targets/ -type f) ./artifact/firmware/
-          cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/
+          zip -r ./artifact/firmware/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Firmware.zip ./bin/targets
+          zip -r ./artifact/package/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip ./bin
           cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
           
       - name: Deliver buildinfo
@@ -141,15 +145,6 @@ jobs:
            DESCRIPTION: functions.txt
         run: | 
           [ -e $DESCRIPTION ] && mv $DESCRIPTION openwrt/bin/插件说明.txt
-          echo "::set-output name=status::success"
-
-      - name: Compress firmware
-        id: compress
-        run: | 
-          cd openwrt
-          zip -r ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Firmware.zip ./bin/targets && \
-          zip -r ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip ./bin && \
-          zip -r ${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Packages.zip ./bin/packages && \
           echo "::set-output name=status::success"
 
       - name: Upload bin directory to cowtransfer
