@@ -91,9 +91,8 @@ jobs:
           cd openwrt
           make -j$(nproc) || make -j1 V=s
           echo "::set-output name=status::success"
-          grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-          [ -s DEVICE_NAME ] && echo "::set-env name=DEVICE_NAME::_$(cat DEVICE_NAME)"
-          echo "::set-env name=FILE_DATE::_$(date +"%Y%m%d%H%M")"
+          grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > ./DEVICE_NAME
+          date +"%Y%m%d%H%M" > ./FILE_DATE
           echo "======================="
           echo "Space usage:"
           echo "======================="
@@ -110,6 +109,8 @@ jobs:
           mkdir -p ./artifact/package
           mkdir -p ./artifact/buildinfo
           rm -rf $(find ./bin/targets/ -type d -name "packages")
+          [ -s ./DEVICE_NAME ] && DEVICE_NAME=$(cat ./DEVICE_NAME)
+          [ -s ./FILE_DATE ] && FILE_DATE=$(cat ./FILE_DATE)
           zip -r ./artifact/firmware/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Firmware.zip ./bin/targets
           zip -r ./artifact/package/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip ./bin
           cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
@@ -151,6 +152,8 @@ jobs:
         id: upload_bin
         if: steps.compress.outputs.status == 'success' || !cancelled()
         run: |
+          [ -s /openwrt/DEVICE_NAME ] && DEVICE_NAME=$(cat /openwrt/DEVICE_NAME)
+          [ -s /openwrt/FILE_DATE ] && FILE_DATE=$(cat /openwrt/FILE_DATE)
           curl -fsSL git.io/file-transfer | sh
           ./transfer cow --block 2621440 -s -p 64 --no-progress openwrt/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip 2>&1 | tee cowtransfer.log
           echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
@@ -164,6 +167,8 @@ jobs:
         id: send_bin
         if: steps.upload_bin.outputs.status == 'success' || !cancelled()
         run: |   
+          [ -s ./openwrt/DEVICE_NAME ] && DEVICE_NAME=$(cat ./openwrt/DEVICE_NAME)
+          [ -s ./openwrt/FILE_DATE ] && FILE_DATE=$(cat ./openwrt/FILE_DATE)
           [ `wc -c "openwrt/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Bin.zip" | awk -F " " '{print $1}'` -lt "52428800" ] && \
           openwrt/sendEmail-v1.56/sendEmail -f 13631482230@163.com -t tracefish@qq.com \
           {-s smtp.163.com -u "${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}BinDir" -o message-content-type=html \
@@ -174,7 +179,9 @@ jobs:
       - name: Send firmware
         id: send_firmware
         if: steps.upload_bin.outputs.status == 'success' || steps.send_bin.outputs.status == 'success' || !cancelled()
-        run: |   
+        run: |
+          [ -s ./openwrt/DEVICE_NAME ] && DEVICE_NAME=$(cat ./openwrt/DEVICE_NAME)
+          [ -s ./openwrt/FILE_DATE ] && FILE_DATE=$(cat ./openwrt/FILE_DATE)
           [ `wc -c "openwrt/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Firmware.zip" | awk -F " " '{print $1}'` -lt "52428800" ] && \ 
           {openwrt/sendEmail-v1.56/sendEmail -f 13631482230@163.com -t tracefish@qq.com \
           -s smtp.163.com -u "${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}firmware" -o message-content-type=html \
@@ -186,6 +193,8 @@ jobs:
         id: send_packages
         if: steps.upload_bin.outputs.status == 'success' || steps.send_bin.outputs.status == 'success' || !cancelled()
         run: |   
+          [ -s ./openwrt/DEVICE_NAME ] && DEVICE_NAME=$(cat ./openwrt/DEVICE_NAME)
+          [ -s ./openwrt/FILE_DATE ] && FILE_DATE=$(cat ./openwrt/FILE_DATE)
           [ `wc -c "openwrt/${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}Packages.zip" | awk -F " " '{print $1}'` -lt "52428800" ] && \
           {openwrt/sendEmail-v1.56/sendEmail -f 13631482230@163.com -t tracefish@qq.com \
           -s smtp.163.com -u "${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}packages" -o message-content-type=html \
